@@ -5448,7 +5448,20 @@ class LibvirtDriver(driver.ComputeDriver):
         if mdevs:
             self._guest_add_mdevs(guest, mdevs)
 
+        if self._sev_required(flavor):
+            self._guest_add_sev(guest, image_meta, flavor)
+
         return guest
+
+    def _guest_add_sev(self, guest, image_meta, flavor):
+        domain_caps = self._host.get_domain_capabilities()
+        # feature #0 is sev
+        sev = domain_caps.features[0]
+
+        launch_security = vconfig.LibvirtConfigGuestSEVLaunchSecurity()
+        launch_security.cbitpos = sev.cbitpos
+        launch_security.reduced_phys_bits = sev.reduced_phys_bits
+        guest.launch_security = launch_security
 
     def _guest_add_mdevs(self, guest, chosen_mdevs):
         for chosen_mdev in chosen_mdevs:
